@@ -888,6 +888,28 @@ let extract_inductive r s l optstr =
     | _ -> error_inductive g
 
 
+let type_arities = Summary.ref Refmap'.empty ~name:"ExtrTypeArity"
+
+let add_type_arity r arity = type_arities := Refmap'.add r arity !type_arities
+
+let in_type_arities : global_reference * int -> obj =
+  declare_object
+    {(default_object "Extract Type Arity") with
+       cache_function = (fun (_,(r,arity)) -> add_type_arity r arity);
+       load_function = (fun _ (_,(r,arity)) -> add_type_arity r arity);
+       classify_function = (fun o -> Substitute o);
+       subst_function =
+        (fun (s,(r,arity)) -> (fst (subst_global s r), arity))
+    }
+
+let extract_type_arity r arity =
+  let g = Smartlocate.global_with_alias r in
+  Lib.add_anonymous_leaf (in_type_arities (g,arity))
+
+let has_type_arity r = Refmap'.mem r !type_arities
+
+let find_type_arity r = Refmap'.find r !type_arities
+
 
 (*s Tables synchronization. *)
 

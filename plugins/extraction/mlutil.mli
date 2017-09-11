@@ -96,6 +96,7 @@ val named_lams : ml_ident list -> ml_ast -> ml_ast
 val dummy_lams : ml_ast -> int -> ml_ast
 val anonym_or_dummy_lams : ml_ast -> signature -> ml_ast
 
+val eta_args : int -> ml_ast list
 val eta_args_sign : int -> signature -> ml_ast list
 
 (*s Utility functions over ML terms. *)

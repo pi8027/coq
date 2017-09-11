@@ -201,6 +201,9 @@ val extract_constant_inline :
   bool -> qualid -> string list -> string -> unit
 val extract_inductive :
   qualid -> string -> string list -> string option -> unit
+val extract_type_arity : qualid -> int -> unit
+val has_type_arity : GlobRef.t -> bool
+val find_type_arity : GlobRef.t -> int
 
 
 type int_or_id = ArgInt of int | ArgId of Id.t

@@ -608,6 +608,15 @@ let record_constant_type env sg kn opt_typ =
      let () = add_cst_type kn cb schema in
      schema
 
+(* type_decomp_ex: an auxiliary function for eta-expansion in [extract_term] *)
+
+let rec type_decomp_ex = function
+  | Tmeta {contents = Some t} -> type_decomp_ex t
+  | Tarr (a,b) -> let l,h,f = type_decomp_ex b in a::l, h, f
+  | Tglob (r,_) when has_type_arity r ->
+    List.init (find_type_arity r) new_meta, new_meta (), true
+  | a -> [], a, false
+
 (*S Extraction of a term. *)
 
 (* Precondition: [(c args)] is not a type scheme, and is informative. *)
@@ -672,7 +681,14 @@ let rec extract_term env sg mle mlt c args =
 	let extract_rel mlt = put_magic (mlt, Mlenv.get mle n) (MLrel n)
         in extract_app env sg mle mlt extract_rel args
     | Case ({ci_ind=ip},_,c0,br) ->
-        extract_app env sg mle mlt (extract_case env sg mle (ip,c0,br)) args
+        let e =
+          extract_app env sg mle mlt (extract_case env sg mle (ip,c0,br)) args
+        in
+        let (mltl, mlth, magic) = type_decomp_ex mlt in
+        let arity = List.length mltl in
+        anonym_or_dummy_lams
+          (mlapp ((*put_magic_if magic*) (ast_lift arity e)) (eta_args arity))
+          (List.map (type2sign env) mltl)
     | Fix ((_,i),recd) ->
         extract_app env sg mle mlt (extract_fix env sg mle i recd) args
     | CoFix (i,recd) ->

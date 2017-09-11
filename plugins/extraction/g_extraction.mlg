@@ -181,3 +181,8 @@ VERNAC COMMAND EXTEND ShowExtraction CLASSIFIED AS QUERY STATE proof_query
 | [ "Show" "Extraction" ]
   -> { show_extraction }
 END
+
+VERNAC COMMAND EXTEND ExtractionTypeArity CLASSIFIED AS SIDEFF
+| [ "Extract" "Type" "Arity" global(x) int(arity) ]
+  -> { extract_type_arity x arity }
+END

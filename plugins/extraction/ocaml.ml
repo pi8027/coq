@@ -246,7 +246,8 @@ let rec pp_expr par env args =
     | MLaxiom ->
 	pp_par par (str "failwith \"AXIOM TO BE REALIZED\"")
     | MLcons (_,r,a) as c ->
-        assert (List.is_empty args);
+        (* assert (List.is_empty args); *)
+        (fun e -> pp_apply e par args)
         begin match a with
 	  | _ when is_native_char c -> pp_native_char c
 	  | [a1;a2] when is_infix r ->
