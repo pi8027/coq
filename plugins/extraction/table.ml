@@ -529,7 +529,7 @@ let keep_singleton = my_bool_option "KeepSingleton" false
 (*s Extraction Optimize *)
 
 type opt_flag =
-    { opt_kill_dum : bool; (* 1 *)
+    { opt_kill_dum : bool;  (* 1 *)
       opt_fix_fun : bool;   (* 2 *)
       opt_case_iot : bool;  (* 4 *)
       opt_case_idr : bool;  (* 8 *)
@@ -539,7 +539,9 @@ type opt_flag =
       opt_case_app : bool;  (* 128 *)
       opt_let_app : bool;   (* 256 *)
       opt_lin_let : bool;   (* 512 *)
-      opt_lin_beta : bool } (* 1024 *)
+      opt_lin_beta : bool;  (* 1024 *)
+      opt_distr_let : bool; (* 2048 *)
+      opt_let_adt : bool }  (* 4096 *)
 
 let kth_digit n k = not (Int.equal (n land (1 lsl k)) 0)
 
@@ -554,7 +556,9 @@ let flag_of_int n =
       opt_case_app = kth_digit n 7;
       opt_let_app = kth_digit n 8;
       opt_lin_let = kth_digit n 9;
-      opt_lin_beta = kth_digit n 10 }
+      opt_lin_beta = kth_digit n 10;
+      opt_distr_let = kth_digit n 11;
+      opt_let_adt = kth_digit n 12 }
 
 (* For the moment, we allow by default everything except :
    - the type-unsafe optimization [opt_case_idg], which anyway
@@ -564,7 +568,9 @@ let flag_of_int n =
       when inlining recursors).
 *)
 
-let int_flag_init = 1 + 2 + 4 + 8 (*+ 16*) + 32 + 64 + 128 + 256 (*+ 512 + 1024*)
+let int_flag_init =
+  1 + 2 + 4 + 8 (*+ 16*) + 32 + 64 + 128 + 256
+  (*+ 512 + 1024 + 2048 + 4096*)
 
 let int_flag_ref = ref int_flag_init
 let opt_flag_ref = ref (flag_of_int int_flag_init)
