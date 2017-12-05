@@ -1016,6 +1016,7 @@ let iota_gen br hd =
       let new_br =
 	Array.map (fun (i,p,c)->(i,p,iota (k+(List.length i)) m c)) br'
       in MLcase(typ,e,new_br)
+    | MLletin (id,e1,e2) -> MLletin (id,e1,iota (k+1) m e2)
     | MLmagic e -> iota k true e
     | _ -> raise Impossible
   in iota 0 false hd
@@ -1135,7 +1136,7 @@ and simpl_let o m id c e =
 
 and simpl_let' o ms id c e =
   if
-    (is_atomic c) || (is_atomic e) ||
+    (is_atomic (unmagic c)) || (is_atomic (unmagic e)) ||
     (let n = nb_occur_match e in
      (Int.equal n 0 || (Int.equal n 1 && expand_linear_let o id e)))
   then
@@ -1181,45 +1182,34 @@ and simpl_app o a = function
 (* Invariant : all empty matches should now be [MLexn] *)
 
 and simpl_case o typ br e =
-  let rec decomp_let = function
-    | MLletin (id, e1, e2) ->
-      let (n, binds, e) = decomp_let e2 in
-      (1 + n, (id, e1) :: binds, e)
-    | e -> (0, [], e)
-  in
-  let (n, binds, e) = if o.opt_let_adt then decomp_let e else (0, [], e) in
-  let br =
-    Array.map (ast_map_lift_branch (ast_lift_rec (List.length binds)) 0) br in
-  List.fold_right
-    (fun (id, e1) e2 -> simpl_let o false id e1 e2) binds
-  (try
-     (* Generalized iota-redex *)
-     if not o.opt_case_iot then raise Impossible;
-     simpl o (iota_gen br e)
-   with Impossible ->
-     (* Swap the case and the lam if possible *)
-     let ids,br = if o.opt_case_fun then permut_case_fun br [] else [],br in
-     let n = List.length ids in
-     if not (Int.equal n 0) then
-       simpl o (named_lams ids (MLcase (typ, ast_lift n e, br)))
-     else
-       (* Can we merge several branches as the same constant or function ? *)
-       if lang() == Scheme || is_custom_match br
-       then MLcase (typ, e, br)
-       else match factor_branches o typ br with
-	 | Some (f,ints) when Int.equal (Int.Set.cardinal ints) (Array.length br) ->
-	   (* If all branches have been factorized, we remove the match *)
-	   simpl o (MLletin (Tmp anonymous_name, e, f))
-	 | Some (f,ints) ->
-	   let last_br =
-	     if ast_occurs 1 f then ([Tmp anonymous_name], Prel 1, f)
-	     else ([], Pwild, ast_pop f)
-	   in
-	   let brl = Array.to_list br in
-	   let brl_opt = List.filteri (fun i _ -> not (Int.Set.mem i ints)) brl in
-	   let brl_opt = brl_opt @ [last_br] in
-	   MLcase (typ, e, Array.of_list brl_opt)
-	 | None -> MLcase (typ, e, br))
+  try
+    (* Generalized iota-redex *)
+    if not o.opt_case_iot then raise Impossible;
+    simpl o (iota_gen br e)
+  with Impossible ->
+    (* Swap the case and the lam if possible *)
+    let ids,br = if o.opt_case_fun then permut_case_fun br [] else [],br in
+    let n = List.length ids in
+    if not (Int.equal n 0) then
+      simpl o (named_lams ids (MLcase (typ, ast_lift n e, br)))
+    else
+      (* Can we merge several branches as the same constant or function ? *)
+      if lang() == Scheme || is_custom_match br
+      then MLcase (typ, e, br)
+      else match factor_branches o typ br with
+	| Some (f,ints) when Int.equal (Int.Set.cardinal ints) (Array.length br) ->
+	  (* If all branches have been factorized, we remove the match *)
+	  simpl o (MLletin (Tmp anonymous_name, e, f))
+	| Some (f,ints) ->
+	  let last_br =
+	    if ast_occurs 1 f then ([Tmp anonymous_name], Prel 1, f)
+	    else ([], Pwild, ast_pop f)
+	  in
+	  let brl = Array.to_list br in
+	  let brl_opt = List.filteri (fun i _ -> not (Int.Set.mem i ints)) brl in
+	  let brl_opt = brl_opt @ [last_br] in
+	  MLcase (typ, e, Array.of_list brl_opt)
+	| None -> MLcase (typ, e, br)
 
 (*S Local prop elimination. *)
 (* We try to eliminate as many [prop] as possible inside an [ml_ast]. *)
