@@ -125,7 +125,7 @@ val keep_singleton : unit -> bool
 (*s Optimize parameter *)
 
 type opt_flag =
-    { opt_kill_dum : bool; (* 1 *)
+    { opt_kill_dum : bool;  (* 1 *)
       opt_fix_fun : bool;   (* 2 *)
       opt_case_iot : bool;  (* 4 *)
       opt_case_idr : bool;  (* 8 *)
@@ -135,7 +135,9 @@ type opt_flag =
       opt_case_app : bool;  (* 128 *)
       opt_let_app : bool;   (* 256 *)
       opt_lin_let : bool;   (* 512 *)
-      opt_lin_beta : bool } (* 1024 *)
+      opt_lin_beta : bool;  (* 1024 *)
+      opt_distr_let : bool; (* 2048 *)
+      opt_let_adt : bool }  (* 4096 *)
 
 val optims :  unit -> opt_flag
 
